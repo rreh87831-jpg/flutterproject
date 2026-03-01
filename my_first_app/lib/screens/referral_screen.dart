@@ -5,7 +5,6 @@ import 'package:my_first_app/models/referral_model.dart';
 import 'package:my_first_app/models/screening_model.dart';
 import 'package:my_first_app/screens/dashboard_screen.dart';
 import 'package:my_first_app/screens/registered_children_screen.dart';
-import 'package:my_first_app/screens/referral_batch_summary_screen.dart';
 import 'package:my_first_app/screens/result_screen.dart';
 import 'package:my_first_app/screens/settings_screen.dart';
 import 'package:my_first_app/services/api_service.dart';
@@ -362,13 +361,16 @@ class _ReferralScreenState extends State<ReferralScreen> {
     }
   }
 
-  Future<void> _createReferral() async {
-    if (!_formKey.currentState!.validate()) return;
+  Future<void> _createReferral({_ReferralDraft? selectedDraft}) async {
+    if (!_formKey.currentState!.validate() || submitting) return;
+    final drafts = selectedDraft == null
+        ? List<_ReferralDraft>.from(_referralDrafts)
+        : <_ReferralDraft>[selectedDraft];
+    if (drafts.isEmpty) return;
+
     setState(() => submitting = true);
     final l10n = AppLocalizations.of(context);
-
     final now = DateTime.now();
-    final drafts = _referralDrafts.isNotEmpty ? _referralDrafts : <_ReferralDraft>[];
     try {
       final api = APIService();
       final localDb = LocalDBService();
@@ -377,7 +379,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
       for (final draft in drafts) {
         index += 1;
         final domain = draft.domain;
-        final referralId = 'ref_${now.millisecondsSinceEpoch}_$index';
+        final referralId = 'ref_${now.microsecondsSinceEpoch}_$index';
         final reasons = domain == null
             ? <String>[]
             : ['${_domainLabel(domain.key, l10n)} (${_riskLabel(domain.risk, l10n)})'];
@@ -411,24 +413,17 @@ class _ReferralScreenState extends State<ReferralScreen> {
             notes: noteText,
             expectedFollowUpDate: draft.followUpDate,
             createdAt: now,
-              metadata: {
-                'sync_status': 'synced',
-                'domain': domain?.key,
-                'domain_risk': domain?.risk,
-                'overall_risk': _normalizeRisk(domain?.risk ?? widget.overallRisk),
-                'referral_type_label': draft.referralType,
-                'age_months': widget.ageMonths,
+            metadata: {
+              'sync_status': 'synced',
+              'domain': domain?.key,
+              'domain_risk': domain?.risk,
+              'overall_risk': _normalizeRisk(domain?.risk ?? widget.overallRisk),
+              'referral_type_label': draft.referralType,
+              'age_months': widget.ageMonths,
             },
           ),
         );
-
       }
-      if (!mounted) return;
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (_) => ReferralBatchSummaryScreen(childId: widget.childId),
-        ),
-      );
     } catch (e) {
       final localDb = LocalDBService();
       await localDb.initialize();
@@ -436,7 +431,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
       for (final draft in drafts) {
         index += 1;
         final domain = draft.domain;
-        final referralId = 'ref_${now.millisecondsSinceEpoch}_$index';
+        final referralId = 'ref_${now.microsecondsSinceEpoch}_$index';
         final reasons = domain == null
             ? <String>[]
             : ['${_domainLabel(domain.key, l10n)} (${_riskLabel(domain.risk, l10n)})'];
@@ -466,16 +461,23 @@ class _ReferralScreenState extends State<ReferralScreen> {
             },
           ),
         );
-
       }
-      if (!mounted) return;
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (_) => ReferralBatchSummaryScreen(childId: widget.childId),
-        ),
-      );
     } finally {
-      if (mounted) setState(() => submitting = false);
+      for (final draft in drafts) {
+        draft.notesController.dispose();
+      }
+      if (mounted) {
+        setState(() {
+          _referralDrafts.removeWhere(drafts.contains);
+          submitting = false;
+        });
+        if (_referralDrafts.isEmpty) {
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (_) => const DashboardScreen()),
+            (route) => false,
+          );
+        }
+      }
     }
   }
 
@@ -686,6 +688,18 @@ class _ReferralScreenState extends State<ReferralScreen> {
                 child: Text(l10n.t('use_recommendation')),
               ),
             ),
+            const SizedBox(height: 6),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: submitting ? null : () => _createReferral(selectedDraft: draft),
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+                child: Text(submitting ? l10n.t('submitting') : l10n.t('create_referral')),
+              ),
+            ),
           ],
         ),
       ),
@@ -816,22 +830,6 @@ class _ReferralScreenState extends State<ReferralScreen> {
                                         _buildDraftCard(_referralDrafts[i]),
                                         if (i < _referralDrafts.length - 1) const SizedBox(height: 12),
                                       ],
-                                      const SizedBox(height: 16),
-                                      SizedBox(
-                                        width: double.infinity,
-                                        child: ElevatedButton(
-                                          onPressed: submitting ? null : _createReferral,
-                                          style: ElevatedButton.styleFrom(
-                                            padding: const EdgeInsets.symmetric(vertical: 14),
-                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                          ),
-                                          child: Text(
-                                            submitting
-                                                ? l10n.t('submitting')
-                                                : (_referralDrafts.length > 1 ? l10n.t('create_referrals') : l10n.t('create_referral')),
-                                          ),
-                                        ),
-                                      ),
                                       const SizedBox(height: 8),
                                     ],
                                   ),

@@ -4,7 +4,7 @@ import 'package:my_first_app/core/navigation/navigation_state_service.dart';
 import 'package:my_first_app/models/child_model.dart';
 import 'package:my_first_app/models/screening_model.dart' as sm;
 import 'package:my_first_app/screens/dashboard_screen.dart';
-import 'package:my_first_app/screens/referral_batch_summary_screen.dart';
+import 'package:my_first_app/screens/referral_screen.dart';
 import 'package:my_first_app/screens/settings_screen.dart';
 import 'package:my_first_app/services/local_db_service.dart';
 import 'package:my_first_app/widgets/language_menu_button.dart';
@@ -753,8 +753,13 @@ class _ResultScreenState extends State<ResultScreen> {
               onPressed: () {
                 Navigator.of(context).pushReplacement(
                   MaterialPageRoute(
-                    builder: (_) => ReferralBatchSummaryScreen(
+                    builder: (_) => ReferralScreen(
                       childId: widget.childId,
+                      awwId: widget.awwId,
+                      ageMonths: widget.ageMonths,
+                      overallRisk: widget.overallRisk,
+                      domainScores: widget.domainScores,
+                      domainRiskLevels: widget.domainRiskLevels,
                     ),
                   ),
                 );
