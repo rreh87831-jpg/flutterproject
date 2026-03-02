@@ -4,7 +4,7 @@ import 'package:my_first_app/core/navigation/navigation_state_service.dart';
 import 'package:my_first_app/models/child_model.dart';
 import 'package:my_first_app/models/screening_model.dart' as sm;
 import 'package:my_first_app/screens/dashboard_screen.dart';
-import 'package:my_first_app/screens/referral_screen.dart';
+import 'package:my_first_app/screens/ref_page.dart';
 import 'package:my_first_app/screens/settings_screen.dart';
 import 'package:my_first_app/services/local_db_service.dart';
 import 'package:my_first_app/widgets/language_menu_button.dart';
@@ -169,6 +169,13 @@ class _ResultScreenState extends State<ResultScreen> {
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (_) => const DashboardScreen()),
       (route) => false,
+    );
+  }
+
+  Future<void> _goRefPage() async {
+    if (!mounted) return;
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const RefPage()),
     );
   }
 
@@ -748,22 +755,9 @@ class _ResultScreenState extends State<ResultScreen> {
           SizedBox(
             width: desktop ? 420 : double.infinity,
             child: ElevatedButton.icon(
-              icon: const Icon(Icons.local_hospital),
-              label: const Text('Continue to Referral'),
-              onPressed: () {
-                Navigator.of(context).pushReplacement(
-                  MaterialPageRoute(
-                    builder: (_) => ReferralScreen(
-                      childId: widget.childId,
-                      awwId: widget.awwId,
-                      ageMonths: widget.ageMonths,
-                      overallRisk: widget.overallRisk,
-                      domainScores: widget.domainScores,
-                      domainRiskLevels: widget.domainRiskLevels,
-                    ),
-                  ),
-                );
-              },
+              icon: const Icon(Icons.arrow_forward),
+              label: const Text('Go to REF page'),
+              onPressed: _goRefPage,
             ),
           ),
           const SizedBox(height: 8),
@@ -772,12 +766,7 @@ class _ResultScreenState extends State<ResultScreen> {
             child: OutlinedButton.icon(
               icon: const Icon(Icons.dashboard_outlined),
               label: const Text('Back to Dashboard'),
-              onPressed: () {
-                Navigator.of(context).pushAndRemoveUntil(
-                  MaterialPageRoute(builder: (_) => const DashboardScreen()),
-                  (route) => false,
-                );
-              },
+              onPressed: _goDashboard,
             ),
           ),
         ],

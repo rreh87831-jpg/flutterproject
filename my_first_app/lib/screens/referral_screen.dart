@@ -4,6 +4,8 @@ import 'package:my_first_app/models/child_model.dart';
 import 'package:my_first_app/models/referral_model.dart';
 import 'package:my_first_app/models/screening_model.dart';
 import 'package:my_first_app/screens/dashboard_screen.dart';
+import 'package:my_first_app/screens/followup_complete_screen.dart';
+import 'package:my_first_app/screens/referral_batch_summary_screen.dart';
 import 'package:my_first_app/screens/registered_children_screen.dart';
 import 'package:my_first_app/screens/result_screen.dart';
 import 'package:my_first_app/screens/settings_screen.dart';
@@ -103,7 +105,8 @@ class _ReferralScreenState extends State<ReferralScreen> {
   }
 
   void _applyRecommendation() {
-    final recommendedDomains = _domainRisks.where((d) => d.severity >= 3).toList();
+    // Create separate referrals for every domain risk available.
+    final recommendedDomains = _domainRisks.where((d) => d.key.trim().isNotEmpty).toList();
 
     _recommendations.clear();
     if (recommendedDomains.isNotEmpty) {
@@ -361,7 +364,11 @@ class _ReferralScreenState extends State<ReferralScreen> {
     }
   }
 
-  Future<void> _createReferral({_ReferralDraft? selectedDraft}) async {
+  Future<void> _createReferral({
+    _ReferralDraft? selectedDraft,
+    bool openFollowUpForCreatedReferral = true,
+    bool openReferralListAfterCreate = false,
+  }) async {
     if (!_formKey.currentState!.validate() || submitting) return;
     final drafts = selectedDraft == null
         ? List<_ReferralDraft>.from(_referralDrafts)
@@ -371,6 +378,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
     setState(() => submitting = true);
     final l10n = AppLocalizations.of(context);
     final now = DateTime.now();
+    String? createdReferralIdForFollowUp;
     try {
       final api = APIService();
       final localDb = LocalDBService();
@@ -379,19 +387,20 @@ class _ReferralScreenState extends State<ReferralScreen> {
       for (final draft in drafts) {
         index += 1;
         final domain = draft.domain;
-        final referralId = 'ref_${now.microsecondsSinceEpoch}_$index';
+        final fallbackReferralId = 'ref_${now.microsecondsSinceEpoch}_$index';
         final reasons = domain == null
             ? <String>[]
             : ['${_domainLabel(domain.key, l10n)} (${_riskLabel(domain.risk, l10n)})'];
         final noteText = draft.notesController.text.trim().isNotEmpty
             ? draft.notesController.text.trim()
             : (reasons.isEmpty ? '' : l10n.t('referral_suggested_due_to', {'reasons': reasons.join(', ')}));
+        final referralRisk = _formatRisk(domain?.risk ?? widget.overallRisk);
 
         final payload = {
           'child_id': widget.childId,
           'aww_id': widget.awwId,
           'age_months': widget.ageMonths,
-          'overall_risk': widget.overallRisk,
+          'overall_risk': referralRisk,
           'domain_scores': widget.domainScores,
           'referral_type': _backendReferralType(draft.referralType),
           'urgency': draft.urgency,
@@ -400,7 +409,10 @@ class _ReferralScreenState extends State<ReferralScreen> {
           'referral_timestamp': now.toIso8601String(),
         };
 
-        await api.createReferral(payload);
+        final response = await api.createReferral(payload);
+        final serverReferralId = '${response['referral_id'] ?? ''}'.trim();
+        final referralId = serverReferralId.isEmpty ? fallbackReferralId : serverReferralId;
+        createdReferralIdForFollowUp ??= referralId;
         await localDb.saveReferral(
           ReferralModel(
             referralId: referralId,
@@ -471,7 +483,24 @@ class _ReferralScreenState extends State<ReferralScreen> {
           _referralDrafts.removeWhere(drafts.contains);
           submitting = false;
         });
-        if (_referralDrafts.isEmpty) {
+        if (openFollowUpForCreatedReferral && createdReferralIdForFollowUp != null) {
+          await Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => FollowupCompleteScreen(
+                referralId: createdReferralIdForFollowUp!,
+                childId: widget.childId,
+                userRole: 'AWW',
+              ),
+            ),
+          );
+        }
+        if (mounted && openReferralListAfterCreate) {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(
+              builder: (_) => ReferralBatchSummaryScreen(childId: widget.childId),
+            ),
+          );
+        } else if (mounted && _referralDrafts.isEmpty) {
           Navigator.of(context).pushAndRemoveUntil(
             MaterialPageRoute(builder: (_) => const DashboardScreen()),
             (route) => false,
@@ -692,7 +721,13 @@ class _ReferralScreenState extends State<ReferralScreen> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: submitting ? null : () => _createReferral(selectedDraft: draft),
+                onPressed: submitting
+                    ? null
+                    : () => _createReferral(
+                          selectedDraft: draft,
+                          openFollowUpForCreatedReferral: false,
+                          openReferralListAfterCreate: true,
+                        ),
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -816,19 +851,42 @@ class _ReferralScreenState extends State<ReferralScreen> {
                                       if (_recommendedDomains.length > 1) ...[
                                         const SizedBox(height: 8),
                                         Text(
-                                          l10n.t('multiple_referrals_notice'),
+                                          'Multiple risk domains detected. Separate referrals will be created.',
                                           style: TextStyle(color: Colors.grey[700], fontSize: 12, fontWeight: FontWeight.w600),
                                         ),
                                       ],
                                       const SizedBox(height: 14),
                                       if (_referralDrafts.isEmpty)
                                         Text(
-                                          l10n.t('no_high_critical_domains'),
+                                          'No domains available for referral creation.',
                                           style: TextStyle(color: Colors.grey[700], fontSize: 12, fontWeight: FontWeight.w600),
                                         ),
                                       for (int i = 0; i < _referralDrafts.length; i++) ...[
                                         _buildDraftCard(_referralDrafts[i]),
                                         if (i < _referralDrafts.length - 1) const SizedBox(height: 12),
+                                      ],
+                                      if (_referralDrafts.length > 1) ...[
+                                        const SizedBox(height: 10),
+                                        SizedBox(
+                                          width: double.infinity,
+                                          child: ElevatedButton(
+                                            onPressed: submitting
+                                                ? null
+                                                : () => _createReferral(
+                                                      openFollowUpForCreatedReferral: false,
+                                                      openReferralListAfterCreate: true,
+                                                    ),
+                                            style: ElevatedButton.styleFrom(
+                                              padding: const EdgeInsets.symmetric(vertical: 14),
+                                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                            ),
+                                            child: Text(
+                                              submitting
+                                                  ? l10n.t('submitting')
+                                                  : l10n.t('create_referrals'),
+                                            ),
+                                          ),
+                                        ),
                                       ],
                                       const SizedBox(height: 8),
                                     ],

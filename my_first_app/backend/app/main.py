@@ -195,9 +195,16 @@ class ReferralRequest(BaseModel):
     aww_id: str
     age_months: int
     overall_risk: str
-    domain_scores: Dict[str, float]
+    domain_scores: Dict[str, Any]
     referral_type: str
+    referral_type_label: Optional[str] = None
     urgency: str
+    domain_key: Optional[str] = None
+    domain_label: Optional[str] = None
+    issue_label: Optional[str] = None
+    autism_risk: Optional[str] = None
+    adhd_risk: Optional[str] = None
+    nutrition_risk: Optional[str] = None
     expected_follow_up: Optional[str] = None
     notes: Optional[str] = ""
     referral_timestamp: str
