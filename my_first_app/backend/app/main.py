@@ -195,16 +195,9 @@ class ReferralRequest(BaseModel):
     aww_id: str
     age_months: int
     overall_risk: str
-    domain_scores: Dict[str, Any]
+    domain_scores: Dict[str, float]
     referral_type: str
-    referral_type_label: Optional[str] = None
     urgency: str
-    domain_key: Optional[str] = None
-    domain_label: Optional[str] = None
-    issue_label: Optional[str] = None
-    autism_risk: Optional[str] = None
-    adhd_risk: Optional[str] = None
-    nutrition_risk: Optional[str] = None
     expected_follow_up: Optional[str] = None
     notes: Optional[str] = ""
     referral_timestamp: str
@@ -3606,6 +3599,40 @@ def create_app() -> FastAPI:
                 # Preserve order while removing duplicates.
                 return list(dict.fromkeys(table_names))
 
+            def _resolve_improvement_view_tables() -> List[str]:
+                rows = conn.execute(
+                    """
+                    SELECT t.table_name
+                    FROM information_schema.tables t
+                    JOIN information_schema.columns c
+                      ON c.table_schema = t.table_schema
+                     AND c.table_name = t.table_name
+                    WHERE t.table_schema = 'public'
+                      AND t.table_name LIKE 'improvement_view_%'
+                      AND t.table_name <> 'improvement_view_registry'
+                      AND c.column_name = 'child_id'
+                    """
+                ).fetchall()
+                table_names: List[str] = []
+                for row in rows:
+                    table_name = str(row.get("table_name") or "").strip()
+                    if re.fullmatch(r"[a-zA-Z_][a-zA-Z0-9_]*", table_name):
+                        table_names.append(table_name)
+                # Preserve order while removing duplicates.
+                return list(dict.fromkeys(table_names))
+
+            def _table_exists(table_name: str) -> bool:
+                row = conn.execute(
+                    """
+                    SELECT 1
+                    FROM information_schema.tables
+                    WHERE table_schema = 'public' AND table_name = %s
+                    LIMIT 1
+                    """,
+                    (table_name,),
+                ).fetchone()
+                return row is not None
+
             existing_row = conn.execute(
                 f"""
                 SELECT 1
@@ -3672,6 +3699,7 @@ def create_app() -> FastAPI:
             ).rowcount
 
             deleted_nutrition = 0
+            deleted_improvement_records = 0
             nutrition_where_sql = "child_id = %s"
             nutrition_where_params: List[Any] = [target_child_id]
             if awc_variants:
@@ -3759,12 +3787,33 @@ def create_app() -> FastAPI:
                             (target_child_id,),
                         ).rowcount
 
+                # Problem-B improvement cleanup for this child across shared and
+                # AWC-specific improvement view tables.
+                for table_name in (
+                    "improvement_images",
+                    "improvement_summary",
+                    "improvement_snapshots",
+                    "improvement_table",
+                    "milestone_tracking",
+                ):
+                    if _table_exists(table_name):
+                        deleted_improvement_records += conn.execute(
+                            f"DELETE FROM {table_name} WHERE child_id = %s",
+                            (target_child_id,),
+                        ).rowcount
+                for table_name in _resolve_improvement_view_tables():
+                    deleted_improvement_records += conn.execute(
+                        f"DELETE FROM {table_name} WHERE child_id = %s",
+                        (target_child_id,),
+                    ).rowcount
+
         return {
             "status": "ok",
             "child_id": target_child_id,
             "deleted_profiles": int(deleted_profiles or 0),
             "deleted_screenings": int(deleted_screenings or 0),
             "deleted_nutrition_records": int(deleted_nutrition or 0),
+            "deleted_improvement_records": int(deleted_improvement_records or 0),
             "deleted_scope": deleted_scope,
         }
 
@@ -5254,6 +5303,35 @@ def create_app() -> FastAPI:
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
 
+    # Problem B (additive API namespace): /api/referrals, /api/activities, /api/escalation
+    try:
+        if __package__:
+            from .problem_b_referral_router import router as problem_b_referral_router
+        else:
+            from problem_b_referral_router import router as problem_b_referral_router
+        app.include_router(problem_b_referral_router)
+    except Exception:
+        # Keep legacy endpoints available even if additive router import fails.
+        pass
+
+    try:
+        if __package__:
+            from .problem_b_improvement_router import router as problem_b_improvement_router
+        else:
+            from problem_b_improvement_router import router as problem_b_improvement_router
+        app.include_router(problem_b_improvement_router)
+    except Exception:
+        pass
+
+    try:
+        if __package__:
+            from .problem_b_timeline_router import router as problem_b_timeline_router
+        else:
+            from problem_b_timeline_router import router as problem_b_timeline_router
+        app.include_router(problem_b_timeline_router)
+    except Exception:
+        pass
+
     return app
 
 
@@ -5274,4 +5352,3 @@ if __name__ == "__main__":
         app_path = "main:app"
 
     uvicorn.run(app_path, host="127.0.0.1", port=8000, reload=True)
-
