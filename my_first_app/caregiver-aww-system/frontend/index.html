@@ -1,0 +1,42 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Caregiver & AWW Activity Tracking System</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+</head>
+<body>
+  <div class="app-container">
+    <nav class="sidebar">
+      <div class="sidebar-header">
+        <h2>Caregiver & AWW</h2>
+        <div class="referral-badge">REF-20260302-0020</div>
+      </div>
+      <ul class="nav-menu">
+        <li class="nav-item active" data-page="referral"><i class="fas fa-file-alt"></i><span>Referral Overview</span></li>
+        <li class="nav-item" data-page="caregiver"><i class="fas fa-user"></i><span>Caregiver Activities</span></li>
+        <li class="nav-item" data-page="aww"><i class="fas fa-child"></i><span>AWW Monitoring</span></li>
+        <li class="nav-item" data-page="followup"><i class="fas fa-calendar-check"></i><span>Follow-Up Plan</span></li>
+      </ul>
+      <div class="progress-summary">
+        <div class="progress-label"><span>Overall Progress</span><span id="progressPercent">3%</span></div>
+        <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:3%"></div></div>
+        <div class="progress-detail"><span id="completedCount">1</span>/<span id="totalCount">32</span> completed</div>
+      </div>
+    </nav>
+    <main class="main-content">
+      <header class="content-header">
+        <h1 id="pageTitle">Referral Overview</h1>
+        <div class="header-actions">
+          <div class="date-display"><i class="fas fa-calendar"></i><span id="currentDate"></span></div>
+          <div class="urgency-badge">IMMEDIATE</div>
+        </div>
+      </header>
+      <div class="content-body" id="contentBody"><div class="loading-spinner"></div></div>
+    </main>
+  </div>
+  <script src="script.js"></script>
+</body>
+</html>

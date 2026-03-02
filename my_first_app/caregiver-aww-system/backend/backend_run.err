@@ -1,0 +1,155 @@
+Database connection failed: password authentication failed for user "postgres"
+error: password authentication failed for user "postgres"
+    at C:\flutterapp 111\flutterproject-main\my_first_app\caregiver-aww-system\backend\node_modules\pg-pool\index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async C:\flutterapp 111\flutterproject-main\my_first_app\caregiver-aww-system\backend\routes\referral.routes.js:8:20 {
+  length: 104,
+  severity: 'FATAL',
+  code: '28P01',
+  detail: undefined,
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'auth.c',
+  line: '320',
+  routine: 'auth_failed'
+}
+error: password authentication failed for user "postgres"
+    at C:\flutterapp 111\flutterproject-main\my_first_app\caregiver-aww-system\backend\node_modules\pg-pool\index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async C:\flutterapp 111\flutterproject-main\my_first_app\caregiver-aww-system\backend\routes\referral.routes.js:8:20 {
+  length: 104,
+  severity: 'FATAL',
+  code: '28P01',
+  detail: undefined,
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'auth.c',
+  line: '320',
+  routine: 'auth_failed'
+}
+error: password authentication failed for user "postgres"
+    at C:\flutterapp 111\flutterproject-main\my_first_app\caregiver-aww-system\backend\node_modules\pg-pool\index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async C:\flutterapp 111\flutterproject-main\my_first_app\caregiver-aww-system\backend\routes\followup.routes.js:61:20 {
+  length: 104,
+  severity: 'FATAL',
+  code: '28P01',
+  detail: undefined,
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'auth.c',
+  line: '320',
+  routine: 'auth_failed'
+}
+error: password authentication failed for user "postgres"
+    at C:\flutterapp 111\flutterproject-main\my_first_app\caregiver-aww-system\backend\node_modules\pg-pool\index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async C:\flutterapp 111\flutterproject-main\my_first_app\caregiver-aww-system\backend\routes\caregiver.routes.js:8:20 {
+  length: 104,
+  severity: 'FATAL',
+  code: '28P01',
+  detail: undefined,
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'auth.c',
+  line: '320',
+  routine: 'auth_failed'
+}
+error: password authentication failed for user "postgres"
+    at C:\flutterapp 111\flutterproject-main\my_first_app\caregiver-aww-system\backend\node_modules\pg-pool\index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async C:\flutterapp 111\flutterproject-main\my_first_app\caregiver-aww-system\backend\routes\aww.routes.js:8:20 {
+  length: 104,
+  severity: 'FATAL',
+  code: '28P01',
+  detail: undefined,
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'auth.c',
+  line: '320',
+  routine: 'auth_failed'
+}
+error: password authentication failed for user "postgres"
+    at C:\flutterapp 111\flutterproject-main\my_first_app\caregiver-aww-system\backend\node_modules\pg-pool\index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async C:\flutterapp 111\flutterproject-main\my_first_app\caregiver-aww-system\backend\routes\caregiver.routes.js:8:20 {
+  length: 104,
+  severity: 'FATAL',
+  code: '28P01',
+  detail: undefined,
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'auth.c',
+  line: '320',
+  routine: 'auth_failed'
+}
+error: password authentication failed for user "postgres"
+    at C:\flutterapp 111\flutterproject-main\my_first_app\caregiver-aww-system\backend\node_modules\pg-pool\index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async C:\flutterapp 111\flutterproject-main\my_first_app\caregiver-aww-system\backend\routes\aww.routes.js:8:20 {
+  length: 104,
+  severity: 'FATAL',
+  code: '28P01',
+  detail: undefined,
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'auth.c',
+  line: '320',
+  routine: 'auth_failed'
+}

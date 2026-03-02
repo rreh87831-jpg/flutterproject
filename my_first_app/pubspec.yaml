@@ -41,6 +41,8 @@ dependencies:
   # Animations
   loading_animation_widget: ^1.2.0
   translator: ^1.0.3+1
+  share_plus: ^10.0.2
+  path_provider: ^2.1.5
 
 dev_dependencies:
   flutter_test:
@@ -64,3 +66,5 @@ flutter:
     - backend/data/girls_wfa.csv
     - backend/data/boys_hfa.csv
     - backend/data/girls_hfa.csv
+    - backend/data/boys_wfh.csv
+    - backend/data/girls_wfh.csv

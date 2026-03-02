@@ -164,14 +164,14 @@ class _NutritionScreenState extends State<NutritionScreen> {
   final TextEditingController _fruitPerWeekController = TextEditingController();
   final TextEditingController _greensPerWeekController = TextEditingController();
   final TextEditingController _junkFoodPerWeekController = TextEditingController();
-  bool _bilateralEdema = false;
+  final bool _bilateralEdema = false;
   bool _repeatedIllness = false;
 
   // Section 1
   bool _recentIllness = false;
-  bool _prematureBirth = false;
+  final bool _prematureBirth = false;
   String? _appetiteStatus;
-  bool _attendsAwcOrSchool = false;
+  final bool _attendsAwcOrSchool = false;
 
   // Section 4
   bool _ironSupplementation = false;

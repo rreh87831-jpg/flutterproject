@@ -662,7 +662,9 @@ class APIService {
     try {
       final response = await _dio.post(
         '/referral/$referralId/escalate',
-        data: {'worker_id': ?workerId},
+        data: {
+          'worker_id': ?workerId,
+        },
       );
       return response.data as Map<String, dynamic>;
     } on DioException catch (e) {

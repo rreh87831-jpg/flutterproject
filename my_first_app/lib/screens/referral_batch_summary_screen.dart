@@ -4,7 +4,6 @@ import 'package:my_first_app/core/navigation/navigation_state_service.dart';
 import 'package:my_first_app/models/referral_model.dart';
 import 'package:my_first_app/models/referral_summary_item.dart';
 import 'package:my_first_app/screens/dashboard_screen.dart';
-import 'package:my_first_app/screens/followup_complete_screen.dart';
 import 'package:my_first_app/services/api_service.dart';
 import 'package:my_first_app/services/auth_service.dart';
 import 'package:my_first_app/services/local_db_service.dart';
@@ -57,20 +56,16 @@ class _ReferralBatchSummaryScreenState extends State<ReferralBatchSummaryScreen>
             _provided = serverItems;
           }
         } else {
-          final childId = widget.childId!.trim();
-          _models = db.getChildReferrals(childId);
-          final serverItems = await _loadServerReferralsForChild(childId);
-          if (serverItems.isNotEmpty) {
-            _provided = serverItems;
+          _models = db.getChildReferrals(widget.childId!);
+          final serverReferral = await _loadServerReferral(widget.childId!);
+          if (serverReferral != null) {
+            _provided = [serverReferral];
           }
         }
       }
     } catch (e) {
       _models = [];
     } finally {
-      // Referral cards are intentionally hidden on this page.
-      _models = [];
-      _provided = [];
       if (mounted) setState(() => _loading = false);
     }
   }
@@ -110,31 +105,6 @@ class _ReferralBatchSummaryScreenState extends State<ReferralBatchSummaryScreen>
       return items;
     } catch (_) {
       return const <ReferralSummaryItem>[];
-    }
-  }
-
-  Future<List<ReferralSummaryItem>> _loadServerReferralsForChild(String childId) async {
-    final normalizedChildId = childId.trim();
-    if (normalizedChildId.isEmpty) {
-      return const <ReferralSummaryItem>[];
-    }
-    try {
-      final rows = await _api.getReferralList(limit: 500);
-      if (rows.isEmpty) {
-        return const <ReferralSummaryItem>[];
-      }
-      final filteredRows = rows
-          .where((row) => '${row['child_id'] ?? ''}'.trim() == normalizedChildId)
-          .toList();
-      if (filteredRows.isEmpty) {
-        return const <ReferralSummaryItem>[];
-      }
-      final futures = filteredRows.map(_fromReferralListRowWithDetails);
-      final items = await Future.wait(futures);
-      return items;
-    } catch (_) {
-      final single = await _loadServerReferral(normalizedChildId);
-      return single == null ? const <ReferralSummaryItem>[] : <ReferralSummaryItem>[single];
     }
   }
 
@@ -884,6 +854,15 @@ class _ReferralBatchSummaryScreenState extends State<ReferralBatchSummaryScreen>
                           AppLocalizations.of(context).t('govt_andhra_pradesh'),
                           style: const TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w600),
                         ),
+                        const SizedBox(height: 4),
+                        Text(
+                          l10n.t('referrals_created', {'count': referrals.length.toString()}),
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: isWide ? 22 : 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ],
                     ),
                   ],
@@ -972,29 +951,13 @@ class _ReferralBatchSummaryScreenState extends State<ReferralBatchSummaryScreen>
 
       // Add referrals for this category
       for (final referral in items) {
-        final referralId = referral.referralId.trim();
-        final canOpenFollowUp = referralId.isNotEmpty;
-        void openFollowUp() {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => FollowupCompleteScreen(
-                referralId: referralId,
-                childId: referral.childId,
-                userRole: 'AWW',
-              ),
-            ),
-          );
-        }
         categoryWidgets.add(
           Card(
             elevation: 6,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            child: InkWell(
-              borderRadius: BorderRadius.circular(16),
-              onTap: canOpenFollowUp ? openFollowUp : null,
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
@@ -1017,37 +980,63 @@ class _ReferralBatchSummaryScreenState extends State<ReferralBatchSummaryScreen>
                           style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
                         ),
                       ),
-                      TextButton(
-                        onPressed: canOpenFollowUp ? openFollowUp : null,
-                        child: Text(l10n.t('open_details')),
-                      ),
                     ],
                   ),
                   const SizedBox(height: 12),
-                  Wrap(
+                                      Wrap(
                     spacing: 10,
                     runSpacing: 10,
                     children: [
                       _infoTile(l10n.t('child_id'), referral.childId),
                       _infoTile(l10n.t('referral_type'), referral.referralType),
                       _infoTile(l10n.t('urgency'), _urgencyLabel(referral.urgency, l10n)),
-                      _infoTile(l10n.t('status'), referral.status),
                       _infoTile(l10n.t('created_on'), _formatDate(referral.createdAt)),
                       _infoTile(l10n.t('follow_up_by'), _formatDate(referral.expectedFollowUpDate)),
                     ],
                   ),
-                  const SizedBox(height: 10),
-                  Text(
-                    'Tap this referral or Open Details to view follow-up activities.',
-                    style: TextStyle(
-                      color: Colors.grey,
-                      fontSize: 12,
-                      fontStyle: FontStyle.italic,
+                  const SizedBox(height: 12),
+                  Text(l10n.t('reasons'), style: TextStyle(fontWeight: FontWeight.w700, color: Colors.grey[800])),
+                  const SizedBox(height: 6),
+                  if (referral.reasons.isEmpty)
+                    Text(l10n.t('no_specific_domain_triggers'))
+                  else
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
+                      children: referral.reasons
+                          .map((r) => Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFFFF3E0),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(r, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                              ))
+                          .toList(),
                     ),
+                  const SizedBox(height: 14),
+                  Text(l10n.t('follow_up_actions'),
+                      style: TextStyle(fontWeight: FontWeight.w700, color: Colors.grey[800])),
+                  const SizedBox(height: 6),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: _followUpActions(referral, l10n)
+                        .map(
+                          (action) => Padding(
+                            padding: const EdgeInsets.only(bottom: 6),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text('• '),
+                                Expanded(child: Text(action)),
+                              ],
+                            ),
+                          ),
+                        )
+                        .toList(),
                   ),
                 ],
               ),
-            ),
             ),
           ),
         );
@@ -1096,4 +1085,3 @@ class _ReferralBatchSummaryScreenState extends State<ReferralBatchSummaryScreen>
     );
   }
 }
-

@@ -1,0 +1,6 @@
+# Linux crontab entries
+# Daily escalation check at 09:00
+0 9 * * * /usr/bin/python3 /path/to/backend/scheduler/escalation_job.py >> /var/log/escalation.log 2>&1
+
+# Optional nightly job placeholder at 00:00
+0 0 * * * /usr/bin/python3 /path/to/backend/scheduler/compliance_update.py >> /var/log/compliance.log 2>&1

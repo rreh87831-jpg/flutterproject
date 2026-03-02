@@ -4,8 +4,9 @@ import 'package:my_first_app/core/navigation/navigation_state_service.dart';
 import 'package:my_first_app/models/child_model.dart';
 import 'package:my_first_app/models/screening_model.dart' as sm;
 import 'package:my_first_app/screens/dashboard_screen.dart';
-import 'package:my_first_app/screens/ref_page.dart';
+import 'package:my_first_app/screens/follow_up_page.dart';
 import 'package:my_first_app/screens/settings_screen.dart';
+import 'package:my_first_app/services/referral_flow_api_service.dart';
 import 'package:my_first_app/services/local_db_service.dart';
 import 'package:my_first_app/widgets/language_menu_button.dart';
 
@@ -172,13 +173,6 @@ class _ResultScreenState extends State<ResultScreen> {
     );
   }
 
-  Future<void> _goRefPage() async {
-    if (!mounted) return;
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const RefPage()),
-    );
-  }
-
   Future<void> _showChildrenCount() async {
     await _localDb.initialize();
     final count = _localDb.getAllChildren().length;
@@ -301,6 +295,82 @@ class _ResultScreenState extends State<ResultScreen> {
     Navigator.of(
       context,
     ).push(MaterialPageRoute(builder: (_) => const SettingsScreen()));
+  }
+
+  int _normalizeScoreToPercent(double value) {
+    if (value <= 1.0) {
+      return (value * 100).round().clamp(0, 100);
+    }
+    return value.round().clamp(0, 100);
+  }
+
+  Map<String, dynamic> _buildRiskPayload() {
+    final gm = _normalizeScoreToPercent(widget.domainScores['GM'] ?? 0);
+    final fm = _normalizeScoreToPercent(widget.domainScores['FM'] ?? 0);
+    final lc = _normalizeScoreToPercent(widget.domainScores['LC'] ?? 0);
+    final cog = _normalizeScoreToPercent(widget.domainScores['COG'] ?? 0);
+    final se = _normalizeScoreToPercent(widget.domainScores['SE'] ?? 0);
+    final numDelays =
+        widget.delaySummary?['num_delays'] ??
+        (widget.delaySummary?['GM_delay'] ?? 0) +
+            (widget.delaySummary?['FM_delay'] ?? 0) +
+            (widget.delaySummary?['LC_delay'] ?? 0) +
+            (widget.delaySummary?['COG_delay'] ?? 0) +
+            (widget.delaySummary?['SE_delay'] ?? 0);
+    final overall = widget.domainScores.values.isEmpty
+        ? 0
+        : ((widget.domainScores.values.reduce((a, b) => a + b) /
+                    widget.domainScores.length) *
+                100)
+            .round();
+
+    return {
+      'child_id': widget.childId,
+      'overall_risk_score': overall.clamp(0, 100),
+      'overall_risk_level': _deriveOverallRisk().toUpperCase(),
+      'num_delays': numDelays,
+      'gm_score': gm,
+      'fm_score': fm,
+      'lc_score': lc,
+      'cog_score': cog,
+      'se_score': se,
+      'autism_score': 0,
+      'adhd_score': 0,
+      'domain_breakdown': {
+        'gm': gm,
+        'fm': fm,
+        'lc': lc,
+        'cog': cog,
+        'se': se,
+        'autism': 0,
+        'adhd': 0,
+      },
+    };
+  }
+
+  Future<void> _continueToReferral() async {
+    final riskData = _buildRiskPayload();
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+    try {
+      final referral = await ReferralFlowApiService.createReferral(riskData);
+      if (!mounted) return;
+      Navigator.of(context).pop();
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => FollowUpPage(referralId: referral.id),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      Navigator.of(context).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to create referral: $e')),
+      );
+    }
   }
 
   Widget _buildNavDrawer() {
@@ -755,9 +825,9 @@ class _ResultScreenState extends State<ResultScreen> {
           SizedBox(
             width: desktop ? 420 : double.infinity,
             child: ElevatedButton.icon(
-              icon: const Icon(Icons.arrow_forward),
-              label: const Text('Go to REF page'),
-              onPressed: _goRefPage,
+              icon: const Icon(Icons.local_hospital),
+              label: const Text('Continue to Referral'),
+              onPressed: _continueToReferral,
             ),
           ),
           const SizedBox(height: 8),
@@ -766,7 +836,12 @@ class _ResultScreenState extends State<ResultScreen> {
             child: OutlinedButton.icon(
               icon: const Icon(Icons.dashboard_outlined),
               label: const Text('Back to Dashboard'),
-              onPressed: _goDashboard,
+              onPressed: () {
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (_) => const DashboardScreen()),
+                  (route) => false,
+                );
+              },
             ),
           ),
         ],

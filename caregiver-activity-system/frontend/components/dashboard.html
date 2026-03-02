@@ -1,0 +1,43 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Caregiver Activity Tracking System</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+</head>
+<body>
+  <div class="app-container">
+    <nav class="sidebar">
+      <div class="sidebar-header"><h2>Caregiver Activity</h2></div>
+      <ul class="nav-menu">
+        <li class="nav-item active" data-page="dashboard"><i class="fas fa-home"></i><span>Dashboard</span></li>
+        <li class="nav-item" data-page="daily"><i class="fas fa-calendar-day"></i><span>Daily Activities</span></li>
+        <li class="nav-item" data-page="weekly"><i class="fas fa-calendar-week"></i><span>Weekly Activities</span></li>
+        <li class="nav-item" data-page="anganwadi"><i class="fas fa-child"></i><span>Anganwadi</span></li>
+        <li class="nav-item" data-page="reports"><i class="fas fa-chart-bar"></i><span>Reports</span></li>
+        <li class="nav-item" data-page="children"><i class="fas fa-users"></i><span>Children</span></li>
+      </ul>
+      <div class="sidebar-footer">
+        <div class="user-info"><i class="fas fa-user-circle"></i><span id="userName">Loading...</span></div>
+        <button id="logoutBtn" class="logout-btn"><i class="fas fa-sign-out-alt"></i><span>Logout</span></button>
+      </div>
+    </nav>
+
+    <main class="main-content">
+      <header class="content-header">
+        <h1 id="pageTitle">Dashboard</h1>
+        <div class="header-actions">
+          <div class="date-display"><i class="fas fa-calendar"></i><span id="currentDate"></span></div>
+          <div class="notification-bell"><i class="fas fa-bell"></i><span class="notification-badge" id="notificationCount">0</span></div>
+        </div>
+      </header>
+      <div class="content-body" id="contentBody"></div>
+    </main>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

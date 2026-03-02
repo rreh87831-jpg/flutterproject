@@ -9,6 +9,8 @@ import 'package:my_first_app/core/theme/app_theme.dart';
 import 'package:my_first_app/core/utils/problem_a_lms_service.dart';
 import 'package:my_first_app/services/local_db_service.dart';
 import 'package:my_first_app/services/sync_service.dart';
+import 'package:my_first_app/screens/escalation_dashboard.dart';
+import 'package:my_first_app/screens/improvement_report_page.dart';
 import 'package:my_first_app/screens/splash_screen.dart';
 
 Future<void> main() async {
@@ -55,6 +57,26 @@ class MyApp extends StatelessWidget {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
+      onGenerateRoute: (settings) {
+        if (settings.name == '/improvement-report') {
+          final args = settings.arguments;
+          if (args is Map<String, dynamic>) {
+            final childId = (args['childId'] ?? '').toString();
+            final referralIdRaw = args['referralId'];
+            final referralId = referralIdRaw is int ? referralIdRaw : int.tryParse('$referralIdRaw');
+            return MaterialPageRoute(
+              builder: (_) => ImprovementReportPage(
+                childId: childId,
+                referralId: referralId,
+              ),
+            );
+          }
+        }
+        if (settings.name == '/escalation-dashboard') {
+          return MaterialPageRoute(builder: (_) => const EscalationDashboard());
+        }
+        return null;
+      },
       navigatorObservers: [routeObserver],
       home: const SplashScreen(),
     );

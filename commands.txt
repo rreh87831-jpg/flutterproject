@@ -3,7 +3,7 @@ psql -U postgres
 
 
 command to run backend in flutter app
-cd C:\FlutterProjects\my_first_app\backend
+cd C:\flutterapp 111\my_first_app\backend
 $env:ECD_DATABASE_URL="postgresql://postgres:6360859268@127.0.0.1:5432/ecd_data"
 python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
 
